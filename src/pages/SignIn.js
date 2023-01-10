@@ -1,6 +1,7 @@
 import React, {useContext, useState} from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from "../context/AuthContext";
+import axios from "axios";
 
 function SignIn() {
   const [ state, setState ] = useState({
@@ -17,12 +18,31 @@ function SignIn() {
     })
   }
 
+  function handleSubmit(e) {
+    e.preventDefault();
+    console.log(`
+    email:    ${state.email}
+    password: ${state.password}
+    `)
+    void signIn();
+  }
+
+  async function signIn() {
+    try {
+      const response = await axios.post('http://localhost:3000/login', state)
+      // console.log(response.data);
+      login(response.data.accessToken);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
     <>
       <h1>Inloggen</h1>
       <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab alias cum debitis dolor dolore fuga id molestias qui quo unde?</p>
       <span>{data}</span>
-      <form onSubmit={() => login(state.email)}>
+      <form onSubmit={handleSubmit}>
         <label htmlFor="email">Email
           <input
             type="email"

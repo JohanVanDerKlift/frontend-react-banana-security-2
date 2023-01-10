@@ -1,29 +1,54 @@
 import React, {createContext, useState} from 'react';
 import {useNavigate} from "react-router-dom";
+import jwt_decode from 'jwt-decode';
+import axios from "axios";
 
 export const AuthContext = createContext(null);
 
 function AuthContextProvider({children}) {
   const [isAuth, setIsAuth] = useState({
     isAuth: false,
-    user: '',
+    user: null,
   });
   const navigate = useNavigate();
 
-  function login(email) {
-    setIsAuth({
-      isAuth: true,
-      user: email,
-    });
-    console.log("De gebruiker is ingelogd");
-    navigate('/profile');
+  function login(token) {
+    localStorage.setItem('token', token);
+    const decoded = jwt_decode(token);
+
+    async function fetchUser() {
+      try {
+        const response = await axios.get(`http://localhost:3000/600/users/${decoded.sub}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          }
+        })
+        console.log(response.data);
+        setIsAuth({
+          isAuth: true,
+          user: {
+            username: response.data.username,
+            email: response.data.email,
+            id: response.data.id,
+          },
+        })
+        console.log("De gebruiker is ingelogd");
+        navigate('/profile');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    void fetchUser();
   }
 
   function logout() {
     setIsAuth({
       isAuth: false,
-      user: '',
+      user: null,
     });
+    localStorage.clear();
     console.log("De gebruiker is uitgelogd");
     navigate('/')
   }
