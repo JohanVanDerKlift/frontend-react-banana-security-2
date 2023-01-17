@@ -18,7 +18,9 @@ function AuthContextProvider({children}) {
     const token = localStorage.getItem('token');
     if (token) {
       const decoded = jwt_decode(token);
-      void fetchUser(decoded, token);
+      if (token && Math.floor(Date.now() / 1000) < decoded.exp) {
+        void fetchUser(decoded, token);
+      }
     } else {
       setIsAuth({
         isAuth: false,
@@ -31,10 +33,11 @@ function AuthContextProvider({children}) {
   function login(token) {
     localStorage.setItem('token', token);
     const decoded = jwt_decode(token);
-    void fetchUser(decoded, token);
+    void fetchUser(decoded, token, '/profile');
+    console.log("De gebruiker is ingelogd");
   }
 
-  async function fetchUser(decoded, token) {
+  async function fetchUser(decoded, token, redirect) {
     try {
       const response = await axios.get(`http://localhost:3000/600/users/${decoded.sub}`, {
         headers: {
@@ -52,8 +55,9 @@ function AuthContextProvider({children}) {
         },
         status: 'done',
       })
-      console.log("De gebruiker is ingelogd");
-      navigate('/profile');
+      if (redirect) {
+        navigate('/profile');
+      }
     } catch (e) {
       console.error(e);
       setIsAuth({
@@ -68,6 +72,7 @@ function AuthContextProvider({children}) {
     setIsAuth({
       isAuth: false,
       user: null,
+      status: 'done'
     });
     localStorage.clear();
     console.log("De gebruiker is uitgelogd");
@@ -81,9 +86,9 @@ function AuthContextProvider({children}) {
       login,
       logout,
     }}>
-      {isAuth.status === 'pending'
-        ? <p>Loading...</p>
-        : children
+      {isAuth.status === 'done'
+        ? children
+        : <p>Loading...</p>
       }
     </AuthContext.Provider>
   );
